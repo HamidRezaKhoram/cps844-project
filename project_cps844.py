@@ -1,7 +1,92 @@
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.cluster import KMeans
+from sklearn.feature_selection import SelectKBest, f_classif
+from mlxtend.frequent_patterns import apriori, association_rules
 
 # Load the data
-data = pd.read_csv('accident.csv')
-print(data.head())
-print(data.info())
+data = pd.read_csv('ObesityDataSet_raw_and_data_sinthetic.csv')
 
+# Preprocessing: Encode categorical columns
+label_encoders = {}
+categorical_columns = ['Gender', 'family_history_with_overweight', 'FAVC', 'CAEC', 'SMOKE', 'SCC', 'MTRANS', 'NObeyesdad']
+
+for column in categorical_columns:
+    le = LabelEncoder()
+    data[column] = le.fit_transform(data[column])
+    label_encoders[column] = le
+
+# Features and target
+X = data.drop(columns=['NObeyesdad'])
+y = data['NObeyesdad']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Feature selection (for use with each classifier)
+def feature_selection(X_train, X_test, k=5):
+    selector = SelectKBest(f_classif, k=k)
+    X_train_new = selector.fit_transform(X_train, y_train)
+    X_test_new = selector.transform(X_test)
+    return X_train_new, X_test_new
+
+# 1. Decision Tree
+def decision_tree(X_train, X_test, y_train, y_test):
+    clf = DecisionTreeClassifier(random_state=42)
+    clf.fit(X_train, y_train)
+    score = clf.score(X_test, y_test)
+    print(f"Decision Tree Accuracy: {score:.4f}")
+
+# 2. K-Nearest Neighbors
+def knn(X_train, X_test, y_train, y_test):
+    clf = KNeighborsClassifier()
+    clf.fit(X_train, y_train)
+    score = clf.score(X_test, y_test)
+    print(f"K-Nearest Neighbors Accuracy: {score:.4f}")
+
+# 3. Gaussian Naive Bayes
+def gaussian_nb(X_train, X_test, y_train, y_test):
+    clf = GaussianNB()
+    clf.fit(X_train, y_train)
+    score = clf.score(X_test, y_test)
+    print(f"Gaussian Naive Bayes Accuracy: {score:.4f}")
+
+# 4. Association Rules (Apriori)
+def apriori_association(X_train, X_test):
+    # Convert data to 0s and 1s for apriori
+    X_train_bin = X_train.applymap(lambda x: 1 if x > 0 else 0)
+    frequent_itemsets = apriori(X_train_bin, min_support=0.2, use_colnames=True)
+    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.0)
+    print(f"Association Rules Found: {len(rules)}")
+
+# 5. K-Means Clustering
+def k_means_clustering(X_train, X_test, y_train, y_test):
+    clf = KMeans(n_clusters=3, random_state=42)  # We use 3 clusters as an example
+    clf.fit(X_train)
+    print(f"K-Means Clustering Labels on X_train: {clf.labels_[:10]}")  # Display first 10 cluster labels
+
+# Function to test with and without feature selection
+def test_classifiers(X_train, X_test, y_train, y_test):
+    # Without feature selection
+    print("\nWithout Feature Selection:")
+    decision_tree(X_train, X_test, y_train, y_test)
+    knn(X_train, X_test, y_train, y_test)
+    gaussian_nb(X_train, X_test, y_train, y_test)
+    apriori_association(X_train, X_test)
+    k_means_clustering(X_train, X_test, y_train, y_test)
+    
+    # With feature selection
+    print("\nWith Feature Selection:")
+    X_train_new, X_test_new = feature_selection(X_train, X_test)
+    decision_tree(X_train_new, X_test_new, y_train, y_test)
+    knn(X_train_new, X_test_new, y_train, y_test)
+    gaussian_nb(X_train_new, X_test_new, y_train, y_test)
+    apriori_association(X_train_new, X_test_new)
+    k_means_clustering(X_train_new, X_test_new, y_train, y_test)
+
+# Run the tests
+test_classifiers(X_train, X_test, y_train, y_test)
