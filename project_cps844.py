@@ -11,7 +11,9 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pprint
 # Load the data
+pd.set_option('display.max_columns', None)
 data = pd.read_csv('ObesityDataSet_raw_and_data_sinthetic.csv')
 # print out the type of data
 print(data.dtypes)
@@ -43,14 +45,12 @@ y = data['NObeyesdad']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, )
 
 # Visualize the data and explore relationships
-def perform_eda(csv_path):
+def perform_eda():
     # Load the dataset
-    data = pd.read_csv(csv_path)
-
     numerical_features = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
 
     # General distribution (mean and standard deviation)
-    print("Mean and Standard Deviation:\n", data[numerical_features].agg(['mean', 'std']), "\n")
+    print("Mean and Standard Deviation:\n", data[numerical_features].agg(['mean', 'std']))
 
     # Boxplots
     plt.figure(figsize=(15, len(numerical_features) * 3))
@@ -58,8 +58,8 @@ def perform_eda(csv_path):
         plt.subplot(len(numerical_features), 1, i + 1)
         sns.boxplot(x=data[col], color='skyblue')
         plt.title(f'Boxplot of {col}')
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 
     # Histograms
     plt.figure(figsize=(15, len(numerical_features) * 3))
@@ -67,8 +67,8 @@ def perform_eda(csv_path):
         plt.subplot(len(numerical_features), 1, i + 1)
         sns.histplot(data[col], kde=True, bins=20, color='green')
         plt.title(f'Histogram of {col}')
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 
     # Scatter plot matrix
     sns.pairplot(data, vars=numerical_features, hue='NObeyesdad')
@@ -92,7 +92,7 @@ def perform_eda(csv_path):
     plt.show()
 
 # Example usage:
-# perform_eda('ObesityDataSet_raw_and_data_sinthetic.csv')
+# perform_eda()
 
 # Feature selection (for use with each classifier)
 def feature_selection(X_train, X_test, k=5):
