@@ -132,7 +132,7 @@ def apriori_association(X_train, X_test):
 
 # 5. K-Means Clustering
 def k_means_clustering(X_train, X_test, y_train, y_test):
-    clf = KMeans(n_clusters=7, random_state=42)  # We use 3 clusters as an example
+    clf = KMeans(n_clusters=7, random_state=42)  # We use 7 clusters as an example
     clf.fit(X_train)
     print(f"K-Means Clustering Labels on X_train: {clf.labels_[:10]}")  # Display first 10 cluster labels
 
