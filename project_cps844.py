@@ -2,46 +2,46 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.cluster import KMeans
 from sklearn.feature_selection import SelectKBest, f_classif
 from mlxtend.frequent_patterns import apriori, association_rules
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pprint
+
 # Load the data
 pd.set_option('display.max_columns', None)
 data = pd.read_csv('ObesityDataSet_raw_and_data_sinthetic.csv')
 # print out the type of data
 print(data.dtypes)
+
 # Preprocessing: Encode categorical columns
 label_encoders = {}
 categorical_columns = ['Gender', 'family_history_with_overweight', 'FAVC', 'CAEC', 'SMOKE', 'SCC', 'CALC', 'MTRANS', 'NObeyesdad']
+
 # missing data
 num_missing_data = data.isnull().sum()
 print(num_missing_data)
-print(data.head())
 
 for column in categorical_columns:
     le = LabelEncoder()
     data[column] = le.fit_transform(data[column])
     label_encoders[column] = le
-
-print(data.head())
 scaler = StandardScaler()
 data[['Age', 'Height', 'Weight']] = scaler.fit_transform(data[['Age', 'Height', 'Weight']])
 print(data.head())
+
 # Features and target
 X = data.drop(columns=['NObeyesdad'])
 y = data['NObeyesdad']
 
-
-
 # Split data into training and testing sets
-
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, )
 
 # Visualize the data and explore relationships
@@ -70,11 +70,6 @@ def perform_eda():
         plt.tight_layout()
         plt.show()
 
-    # Scatter plot matrix
-    sns.pairplot(data, vars=numerical_features, hue='NObeyesdad')
-    plt.suptitle('Scatter Plot Matrix by Obesity Level', y=1.02)
-    plt.show()
-
     # Correlation heatmap
     corr_matrix = data[numerical_features].corr()
     plt.figure(figsize=(12, 8))
@@ -95,7 +90,7 @@ def perform_eda():
 # perform_eda()
 
 # Feature selection (for use with each classifier)
-def feature_selection(X_train, X_test, k=5):
+def feature_selection(X_train, X_test, k=10):
     selector = SelectKBest(f_classif, k=k)
     X_train_new = selector.fit_transform(X_train, y_train)
     X_test_new = selector.transform(X_test)
@@ -122,13 +117,12 @@ def gaussian_nb(X_train, X_test, y_train, y_test):
     score = clf.score(X_test, y_test)
     print(f"Gaussian Naive Bayes Accuracy: {score:.4f}")
 
-# 4. Association Rules (Apriori)
-def apriori_association(X_train, X_test):
-    # Convert data to 0s and 1s for apriori
-    X_train_bin = X_train.applymap(lambda x: 1 if x > 0 else 0)
-    frequent_itemsets = apriori(X_train_bin, min_support=0.2, use_colnames=True)
-    rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1.0)
-    print(f"Association Rules Found: {len(rules)}")
+def random_forest(X_train, X_test, y_train, y_test):
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Random Forest Accuracy: {accuracy:.4f}")
 
 # 5. K-Means Clustering
 def k_means_clustering(X_train, X_test, y_train, y_test):
@@ -143,8 +137,8 @@ def test_classifiers(X_train, X_test, y_train, y_test):
     decision_tree(X_train, X_test, y_train, y_test)
     knn(X_train, X_test, y_train, y_test)
     gaussian_nb(X_train, X_test, y_train, y_test)
-    #apriori_association(X_train, X_test)
     k_means_clustering(X_train, X_test, y_train, y_test)
+    random_forest(X_train, X_test, y_train, y_test)
 
     # With feature selection
     print("\nWith Feature Selection:")
@@ -152,8 +146,7 @@ def test_classifiers(X_train, X_test, y_train, y_test):
     decision_tree(X_train_new, X_test_new, y_train, y_test)
     knn(X_train_new, X_test_new, y_train, y_test)
     gaussian_nb(X_train_new, X_test_new, y_train, y_test)
-    #apriori_association(X_train_new, X_test_new)
     k_means_clustering(X_train_new, X_test_new, y_train, y_test)
-
+    random_forest(X_train_new, X_test_new, y_train, y_test)
 # Run the tests
-# test_classifiers(X_train, X_test, y_train, y_test)
+test_classifiers(X_train, X_test, y_train, y_test)
